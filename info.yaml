@@ -2,13 +2,13 @@
 project:
   title:        "TPU Matrix Acceleration Engine"
   author:       "danilosistu-lang"
-  discord:      ""      # Your discord username (optional)
+  discord:      ""
   description:  "Systolic array AI matrix multiplication accelerator (8x8 INT8)"
   language:     "Verilog"
-  clock_hz:     50000000 # 50 MHz clock
+  clock_hz:     50000000
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # If synthesis fails on area, change to "1x2"
+  tiles: "1x1"
 
   # Your top module name must start with "tt_um_":
   top_module:  "tt_um_tpu_top"
@@ -28,34 +28,34 @@ project:
 # The pinout of your project mapping the TPU interface to Tiny Tapeout GPIOs
 pinout:
   # Inputs (ui_in)
-  ui[0]: "DATA_IN_0"   # Input byte bit 0 / Serial stream
-  ui[1]: "CFG_WR"      # Config write pulse
-  ui[2]: "STREAM_VALID"# Data stream valid flag
+  ui[0]: "DATA_IN_0"
+  ui[1]: "CFG_WR"
+  ui[2]: "STREAM_VALID"
   ui[3]: "DATA_IN_3"
   ui[4]: "DATA_IN_4"
   ui[5]: "DATA_IN_5"
   ui[6]: "DATA_IN_6"
-  ui[7]: "DATA_IN_7"   # Input byte bit 7
+  ui[7]: "DATA_IN_7"
 
   # Outputs (uo_out)
-  uo[0]: "DATA_OUT_0"  # Output matrix byte bit 0
+  uo[0]: "DATA_OUT_0"
   uo[1]: "DATA_OUT_1"
   uo[2]: "DATA_OUT_2"
   uo[3]: "DATA_OUT_3"
   uo[4]: "DATA_OUT_4"
   uo[5]: "DATA_OUT_5"
   uo[6]: "DATA_OUT_6"
-  uo[7]: "DATA_OUT_7"  # Output matrix byte bit 7
+  uo[7]: "DATA_OUT_7"
 
   # Bidirectional pins (uio)
-  uio[0]: "IRQ"        # Execution complete interrupt
-  uio[1]: "BUSY"       # Engine busy flag
-  uio[2]: "A_READY"    # Ready for activation stream
-  uio[3]: "B_READY"    # Ready for weight stream
-  uio[4]: ""           # Unused
-  uio[5]: ""           # Unused
-  uio[6]: ""           # Unused
-  uio[7]: ""           # Unused
+  uio[0]: "IRQ"
+  uio[1]: "BUSY"
+  uio[2]: "A_READY"
+  uio[3]: "B_READY"
+  uio[4]: ""
+  uio[5]: ""
+  uio[6]: ""
+  uio[7]: ""
 
 # Do not change!
 yaml_version: 6
