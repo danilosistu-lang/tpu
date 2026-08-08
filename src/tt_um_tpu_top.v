@@ -149,7 +149,7 @@ module tt_um_tpu_top (
         // Output interface
         .out_valid(o_valid),
         .out_addr(out_addr_unused),
-        .out_data(tpu_out_data),  // Connect to internal wire array
+        .out_data(tpu_out_data),  // Connect to unpacked array
 
         // Status signals
         .busy(tpu_busy),
