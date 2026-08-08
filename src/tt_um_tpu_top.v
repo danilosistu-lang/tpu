@@ -12,7 +12,7 @@
 
 `default_nettype none
 
-`include "rtl/tpu_params.v"
+`include "tpu_params.v"
 
 module tt_um_tpu_top (
     input  wire [7:0] ui_in,    // [0]=serial_data_in, [1]=cfg_wr_pulse, [2]=stream_valid
@@ -116,12 +116,12 @@ module tt_um_tpu_top (
 
         // Weight loading interface (use config shift reg)
         .weight_load_en(cfg_wr_pulse),
-        .weight_addr(8'd0),
+        .weight_addr(4'd0),
         .weight_data(cfg_shift_reg[63:56]),  // Top byte of config
 
         // Activation loading interface
         .activ_load_en(stream_valid),
-        .activ_addr(8'd0),
+        .activ_addr(4'd0),
         .activ_data(adata_reg),
 
         // Quantization parameters (fixed for now)
