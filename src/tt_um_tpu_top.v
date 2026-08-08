@@ -146,7 +146,7 @@ module tt_um_tpu_top (
         .quant_shift(8'd0),      // No shift
         .leaky_slope(8'd16),     // LeakyReLU slope = 0.0625
 
-        // Output interface
+        // Output interface - connect to internal array
         .out_valid(o_valid),
         .out_addr(out_addr_unused),
         .out_data(tpu_out_data),  // Connect to unpacked array
@@ -156,6 +156,11 @@ module tt_um_tpu_top (
         .done(done_unused),
         .interrupt(tpu_irq)
     );
+
+    //--------------------------------------------------------------------------
+    // Connect first element of output array to uo_out
+    //--------------------------------------------------------------------------
+    assign uo_out = out_data_internal[0];
 
     //--------------------------------------------------------------------------
     // Drive bidirectional status outputs
