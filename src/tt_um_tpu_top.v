@@ -94,6 +94,23 @@ module tt_um_tpu_top (
     end
 
     //--------------------------------------------------------------------------
+    // Internal wires for TPU output (8 lanes of 8-bit data)
+    //--------------------------------------------------------------------------
+    wire [7:0] tpu_out_data [0:7];
+    
+    //--------------------------------------------------------------------------
+    // Drive uo_out from the first lane of TPU output
+    //--------------------------------------------------------------------------
+    assign uo_out = tpu_out_data[0];
+    
+    //--------------------------------------------------------------------------
+    // Unused signals (tie off to prevent warnings)
+    //--------------------------------------------------------------------------
+    wire cmd_ready_unused;
+    wire [7:0] out_addr_unused;
+    wire done_unused;
+
+    //--------------------------------------------------------------------------
     // Instantiate the 8x8 TPU Engine
     //--------------------------------------------------------------------------
     tpu_top #(
@@ -111,7 +128,7 @@ module tt_um_tpu_top (
         // Host command interface (simplified for Tiny Tapeout)
         .cmd_opcode(3'b000),    // Idle/no command
         .cmd_valid(1'b0),
-        .cmd_ready(),
+        .cmd_ready(cmd_ready_unused),
         .cmd_arg(32'd0),
 
         // Weight loading interface (use config shift reg)
@@ -131,12 +148,12 @@ module tt_um_tpu_top (
 
         // Output interface
         .out_valid(o_valid),
-        .out_addr(),
-        .out_data({uo_out, 56'd0}),  // Drive lower 8 bits of first lane
+        .out_addr(out_addr_unused),
+        .out_data(tpu_out_data),  // Connect to internal wire array
 
         // Status signals
         .busy(tpu_busy),
-        .done(),
+        .done(done_unused),
         .interrupt(tpu_irq)
     );
 
