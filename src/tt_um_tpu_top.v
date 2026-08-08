@@ -22,7 +22,22 @@ module tt_um_tpu_top (
     output wire [7:0] uio_oe,   // 1=output, 0=input
     input  wire       ena,      // active-high enable (unused, tie to clk gating)
     input  wire       clk,      // clock
-    input  wire       rst_n     // active-low reset
+    input  wire       rst_n,    // active-low reset
+    
+    // Direct test interface signals (for cocotb testing)
+    output wire       weight_load_en,
+    output wire [3:0] weight_addr,
+    output wire [7:0] weight_data,
+    output wire       activ_load_en,
+    output wire [3:0] activ_addr,
+    output wire [7:0] activ_data,
+    output wire       cmd_valid,
+    output wire [2:0] cmd_opcode,
+    output wire [31:0] cmd_arg,
+    input  wire       cmd_ready,
+    output wire       done,
+    output wire       busy,
+    output wire       interrupt
 );
 
     //--------------------------------------------------------------------------
@@ -108,21 +123,21 @@ module tt_um_tpu_top (
         .clk(clk),
         .rst_n(rst_n),
 
-        // Host command interface (simplified for Tiny Tapeout)
-        .cmd_opcode(3'b000),    // Idle/no command
-        .cmd_valid(1'b0),
-        .cmd_ready(),
-        .cmd_arg(32'd0),
+        // Host command interface - expose for direct testing
+        .cmd_opcode(cmd_opcode),
+        .cmd_valid(cmd_valid),
+        .cmd_ready(cmd_ready),
+        .cmd_arg(cmd_arg),
 
-        // Weight loading interface (use config shift reg)
-        .weight_load_en(cfg_wr_pulse),
-        .weight_addr(4'd0),
-        .weight_data(cfg_shift_reg[63:56]),  // Top byte of config
+        // Weight loading interface - expose for direct testing
+        .weight_load_en(weight_load_en),
+        .weight_addr(weight_addr),
+        .weight_data(weight_data),
 
-        // Activation loading interface
-        .activ_load_en(stream_valid),
-        .activ_addr(4'd0),
-        .activ_data(adata_reg),
+        // Activation loading interface - expose for direct testing
+        .activ_load_en(activ_load_en),
+        .activ_addr(activ_addr),
+        .activ_data(activ_data),
 
         // Quantization parameters (fixed for now)
         .quant_scale(16'd256),   // Scale = 1.0 (Q8.8 format)
@@ -134,15 +149,17 @@ module tt_um_tpu_top (
         .out_addr(),
         .out_data(out_data_internal),  // Use internal wire array
 
-        // Status signals
-        .busy(tpu_busy),
-        .done(),
-        .interrupt(tpu_irq)
+        // Status signals - expose for direct testing
+        .busy(busy),
+        .done(done),
+        .interrupt(interrupt)
     );
 
+    // Declare output wire array before using it
+    wire [7:0] out_data_internal [7:0];  // Fixed-size array for 8x8 array
+    
     // Connect first element of output array to uo_out
     assign uo_out = out_data_internal[0];
-    wire [OUTPUT_W-1:0] out_data_internal [N-1:0];
 
     //--------------------------------------------------------------------------
     // Drive bidirectional status outputs
