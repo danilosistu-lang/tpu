@@ -94,6 +94,11 @@ module tt_um_tpu_top (
     end
 
     //--------------------------------------------------------------------------
+    // Declare output wire array before TPU instantiation
+    //--------------------------------------------------------------------------
+    wire [7:0] out_data_internal [7:0];  // 8x8 output array for systolic array
+
+    //--------------------------------------------------------------------------
     // Instantiate the 8x8 TPU Engine
     //--------------------------------------------------------------------------
     tpu_top #(
@@ -129,16 +134,21 @@ module tt_um_tpu_top (
         .quant_shift(8'd0),      // No shift
         .leaky_slope(8'd16),     // LeakyReLU slope = 0.0625
 
-        // Output interface
+        // Output interface - connect to internal array
         .out_valid(o_valid),
         .out_addr(),
-        .out_data({uo_out, 56'd0}),  // Drive lower 8 bits of first lane
+        .out_data(out_data_internal),
 
         // Status signals
         .busy(tpu_busy),
         .done(),
         .interrupt(tpu_irq)
     );
+
+    //--------------------------------------------------------------------------
+    // Connect first element of output array to uo_out
+    //--------------------------------------------------------------------------
+    assign uo_out = out_data_internal[0];
 
     //--------------------------------------------------------------------------
     // Drive bidirectional status outputs
