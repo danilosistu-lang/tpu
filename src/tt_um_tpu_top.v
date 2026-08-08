@@ -22,22 +22,7 @@ module tt_um_tpu_top (
     output wire [7:0] uio_oe,   // 1=output, 0=input
     input  wire       ena,      // active-high enable (unused, tie to clk gating)
     input  wire       clk,      // clock
-    input  wire       rst_n,    // active-low reset
-    
-    // Direct test interface signals (for cocotb testing)
-    output wire       weight_load_en,
-    output wire [3:0] weight_addr,
-    output wire [7:0] weight_data,
-    output wire       activ_load_en,
-    output wire [3:0] activ_addr,
-    output wire [7:0] activ_data,
-    output wire       cmd_valid,
-    output wire [2:0] cmd_opcode,
-    output wire [31:0] cmd_arg,
-    input  wire       cmd_ready,
-    output wire       done,
-    output wire       busy,
-    output wire       interrupt
+    input  wire       rst_n     // active-low reset
 );
 
     //--------------------------------------------------------------------------
@@ -78,11 +63,6 @@ module tt_um_tpu_top (
     wire tpu_irq;
     wire tpu_busy;
 
-    //--------------------------------------------------------------------------
-    // Declare output wire array for TPU output data (MUST be before instantiation)
-    //--------------------------------------------------------------------------
-    wire [7:0] out_data_internal [0:7];  // Fixed-size array for 8x8 array
-    
     //--------------------------------------------------------------------------
     // Stream data registers for 8-bit wide interface
     //--------------------------------------------------------------------------
@@ -128,40 +108,37 @@ module tt_um_tpu_top (
         .clk(clk),
         .rst_n(rst_n),
 
-        // Host command interface - expose for direct testing
-        .cmd_opcode(cmd_opcode),
-        .cmd_valid(cmd_valid),
-        .cmd_ready(cmd_ready),
-        .cmd_arg(cmd_arg),
+        // Host command interface (simplified for Tiny Tapeout)
+        .cmd_opcode(3'b000),    // Idle/no command
+        .cmd_valid(1'b0),
+        .cmd_ready(),
+        .cmd_arg(32'd0),
 
-        // Weight loading interface - expose for direct testing
-        .weight_load_en(weight_load_en),
-        .weight_addr(weight_addr),
-        .weight_data(weight_data),
+        // Weight loading interface (use config shift reg)
+        .weight_load_en(cfg_wr_pulse),
+        .weight_addr(4'd0),
+        .weight_data(cfg_shift_reg[63:56]),  // Top byte of config
 
-        // Activation loading interface - expose for direct testing
-        .activ_load_en(activ_load_en),
-        .activ_addr(activ_addr),
-        .activ_data(activ_data),
+        // Activation loading interface
+        .activ_load_en(stream_valid),
+        .activ_addr(4'd0),
+        .activ_data(adata_reg),
 
         // Quantization parameters (fixed for now)
         .quant_scale(16'd256),   // Scale = 1.0 (Q8.8 format)
         .quant_shift(8'd0),      // No shift
         .leaky_slope(8'd16),     // LeakyReLU slope = 0.0625
 
-        // Output interface - connect only first lane to uo_out
+        // Output interface
         .out_valid(o_valid),
         .out_addr(),
-        .out_data(out_data_internal),  // Use internal wire array
+        .out_data({uo_out, 56'd0}),  // Drive lower 8 bits of first lane
 
-        // Status signals - expose for direct testing
-        .busy(busy),
-        .done(done),
-        .interrupt(interrupt)
+        // Status signals
+        .busy(tpu_busy),
+        .done(),
+        .interrupt(tpu_irq)
     );
-    
-    // Connect first element of output array to uo_out
-    assign uo_out = out_data_internal[0];
 
     //--------------------------------------------------------------------------
     // Drive bidirectional status outputs
@@ -171,20 +148,6 @@ module tt_um_tpu_top (
     assign uio_out[2] = a_ready;    // Activation ready
     assign uio_out[3] = b_ready;    // Weight ready
     assign uio_out[7:4] = 4'b0000;  // Reserved
-
-    // Unused direct test interface signals - tie off
-    assign weight_load_en = 1'b0;
-    assign weight_addr = 4'd0;
-    assign weight_data = 8'd0;
-    assign activ_load_en = 1'b0;
-    assign activ_addr = 4'd0;
-    assign activ_data = 8'd0;
-    assign cmd_valid = 1'b0;
-    assign cmd_opcode = 3'd0;
-    assign cmd_arg = 32'd0;
-    assign done = 1'b0;
-    assign busy = 1'b0;
-    assign interrupt = 1'b0;
 
 endmodule
 
