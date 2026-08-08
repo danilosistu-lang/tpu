@@ -1,0 +1,114 @@
+rm -f results.xml
+"make" -f Makefile results.xml
+make[1]: Entering directory '/workspace/test'
+mkdir -p sim_build
+/usr/bin/iverilog -o sim_build/sim.vvp -s tb -g2012 -I/workspace/test/../src -DTPARRAY_N=8 -f sim_build/cmds.f  /workspace/test/../src/tt_um_tpu_top.v /workspace/test/../src/tpu_params.v /workspace/test/../src/clock_gate.v /workspace/test/../src/pe.v /workspace/test/../src/systolic_array.v /workspace/test/../src/buffer_skew.v /workspace/test/../src/control_fsm.v /workspace/test/../src/activation_unit.v /workspace/test/../src/tpu_top.v /workspace/test/tb.v
+/usr/local/lib/python3.12/site-packages/cocotb_tools/makefiles/simulators/Makefile.icarus:66: Using MODULE is deprecated, please use COCOTB_TEST_MODULES instead.
+rm -f results.xml
+COCOTB_TEST_MODULES=test_tpu COCOTB_TESTCASE= COCOTB_TEST_FILTER= COCOTB_TOPLEVEL=tb TOPLEVEL_LANG=verilog \
+         /usr/bin/vvp -M /usr/local/lib/python3.12/site-packages/cocotb/libs -m libcocotbvpi_icarus   sim_build/sim.vvp   
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at /usr/local/bin/python3.12
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Icarus Verilog version 11.0 (stable)
+     0.00ns WARNING  gpi                                vpi_iterate returned NULL for type vpiInstance for object NULL
+     0.00ns INFO     cocotb                             Seeding Python random module with 1786192025
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.regression                  pytest not found, install it to enable better AssertionError messages
+OpenBLAS WARNING - could not determine the L2 cache size on this system, assuming 256k
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_tpu.test_basic_matmul_4x4 (1/7)
+                                                            Test 4x4 matrix multiplication (unsigned).
+     0.00ns WARNING  py.warnings                        /workspace/test/test_tpu.py:192: DeprecationWarning: The 'units' argument has been renamed to 'unit'.
+                                                          clock = Clock(dut.clk, period_ns, units='ns')
+     0.00ns WARNING  py.warnings                        /workspace/test/test_tpu.py:146: DeprecationWarning: The 'units' argument has been renamed to 'unit'.
+                                                          await Timer(10, units='ns')
+    10.00ns WARNING  py.warnings                        /workspace/test/test_tpu.py:148: DeprecationWarning: The 'units' argument has been renamed to 'unit'.
+                                                          await Timer(10, units='ns')
+    20.00ns INFO     cocotb.tb                          Matrix A:
+                                                        [[102  51  92  14]
+                                                         [106  71  60  20]
+                                                         [102 121  82  86]
+                                                         [ 74  74  87 116]]
+    20.00ns INFO     cocotb.tb                          Matrix B:
+                                                        [[ 99 103  23   2]
+                                                         [ 21  52   1  87]
+                                                         [107  29  37   1]
+                                                         [ 63  59  20  32]]
+    20.00ns INFO     cocotb.tb                          Golden result:
+                                                        [[21895 16652  6081  5181]
+                                                         [19665 17530  5129  7089]
+                                                         [26831 24250  7221 13565]
+                                                         [25497 20837  7315 10385]]
+    20.00ns WARNING  ..matmul_4x4.test_basic_matmul_4x4 tb contains no child object named weight_load_en
+                                                        Traceback (most recent call last):
+                                                          File "/workspace/test/test_tpu.py", line 224, in test_basic_matmul_4x4
+                                                            await driver.load_weight(i * n + j, int(B[i, j]))
+                                                          File "/workspace/test/test_tpu.py", line 167, in load_weight
+                                                            self.dut.weight_load_en.value = 1
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^
+                                                          File "/usr/local/lib/python3.12/site-packages/cocotb/handle.py", line 484, in __getattr__
+                                                            raise AttributeError(f"{self._path} contains no child object named {name}")
+                                                        AttributeError: tb contains no child object named weight_load_en
+    20.00ns WARNING  cocotb.regression                  test_tpu.test_basic_matmul_4x4 failed
+    20.00ns INFO     cocotb.regression                  running test_tpu.test_basic_matmul_8x8 (2/7)
+                                                            Test 8x8 matrix multiplication (default size).
+    40.00ns INFO     cocotb.tb                          Matrix A shape: (8, 8), range: [-62, 62]
+    40.00ns INFO     cocotb.tb                          Matrix B shape: (8, 8), range: [-63, 61]
+    40.00ns INFO     cocotb.tb                          Golden result shape: (8, 8)
+    40.00ns INFO     cocotb.tb                          Golden result range: [-9867, 7283]
+    40.00ns WARNING  ..matmul_8x8.test_basic_matmul_8x8 tb contains no child object named weight_load_en
+                                                        Traceback (most recent call last):
+                                                          File "/workspace/test/test_tpu.py", line 274, in test_basic_matmul_8x8
+                                                            await driver.load_weight(i * n + j, val)
+                                                          File "/workspace/test/test_tpu.py", line 167, in load_weight
+                                                            self.dut.weight_load_en.value = 1
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^
+                                                          File "/usr/local/lib/python3.12/site-packages/cocotb/handle.py", line 484, in __getattr__
+                                                            raise AttributeError(f"{self._path} contains no child object named {name}")
+                                                        AttributeError: tb contains no child object named weight_load_en
+    40.00ns WARNING  cocotb.regression                  test_tpu.test_basic_matmul_8x8 failed
+    40.00ns INFO     cocotb.regression                  running test_tpu.test_relu_activation (3/7)
+                                                            Test ReLU activation function.
+    60.00ns INFO     cocotb.tb                          Matmul result range: [-3351, 2056]
+    60.00ns INFO     cocotb.tb                          ReLU result range: [0, 2056]
+    60.00ns INFO     cocotb.tb                          Test passed: ReLU activation
+    60.00ns INFO     cocotb.regression                  test_tpu.test_relu_activation passed
+    60.00ns INFO     cocotb.regression                  running test_tpu.test_leakyrelu_activation (4/7)
+                                                            Test LeakyReLU activation function.
+    80.00ns INFO     cocotb.tb                          LeakyReLU result range: [-24, 2942]
+    80.00ns INFO     cocotb.tb                          Test passed: LeakyReLU activation
+    80.00ns INFO     cocotb.regression                  test_tpu.test_leakyrelu_activation passed
+    80.00ns INFO     cocotb.regression                  running test_tpu.test_quantization (5/7)
+                                                            Test quantized scaling/shifting.
+   100.00ns INFO     cocotb.tb                          Quant result range: [498, 3180]
+   100.00ns INFO     cocotb.tb                          Test passed: Quantization
+   100.00ns INFO     cocotb.regression                  test_tpu.test_quantization passed
+   100.00ns INFO     cocotb.regression                  running test_tpu.test_overflow_behavior (6/7)
+                                                            Test overflow handling and saturation.
+   120.00ns INFO     cocotb.tb                          Max possible result: 64516
+   120.00ns INFO     cocotb.tb                          Golden result: 64516
+   120.00ns INFO     cocotb.tb                          Test passed: Overflow behavior
+   120.00ns INFO     cocotb.regression                  test_tpu.test_overflow_behavior passed
+   120.00ns INFO     cocotb.regression                  running test_tpu.test_matrix_16x16 (7/7)
+                                                            Test 16x16 matrix multiplication (scale-up target).
+   140.01ns INFO     cocotb.tb                          16x16 Matmul - Golden result shape: (16, 16)
+   140.01ns INFO     cocotb.tb                          16x16 Matmul - Result range: [-3408, 2288]
+   140.01ns INFO     cocotb.tb                          Test passed: 16x16 matrix multiplication
+   140.01ns INFO     cocotb.regression                  test_tpu.test_matrix_16x16 passed
+   140.01ns INFO     cocotb.regression                  ********************************************************************************************
+                                                        ** TEST                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ********************************************************************************************
+                                                        ** test_tpu.test_basic_matmul_4x4       FAIL          20.00           0.05        433.56  **
+                                                        ** test_tpu.test_basic_matmul_8x8       FAIL          20.00           0.00       4725.18  **
+                                                        ** test_tpu.test_relu_activation        PASS          20.00           0.00      10757.38  **
+                                                        ** test_tpu.test_leakyrelu_activation   PASS          20.00           0.01       1672.10  **
+                                                        ** test_tpu.test_quantization           PASS          20.00           0.00      10824.01  **
+                                                        ** test_tpu.test_overflow_behavior      PASS          20.00           0.00      13243.78  **
+                                                        ** test_tpu.test_matrix_16x16           PASS          20.00           0.00      13273.11  **
+                                                        ********************************************************************************************
+                                                        ** TESTS=7 PASS=5 FAIL=2 SKIP=0                      140.01           0.12       1163.52  **
+                                                        ********************************************************************************************
+VCD info: dumpfile tb.fst opened for output.
+make[1]: *** [/usr/local/lib/python3.12/site-packages/cocotb_tools/makefiles/simulators/Makefile.icarus:67: results.xml] Error 2
+make[1]: Leaving directory '/workspace/test'
+make: *** [/usr/local/lib/python3.12/site-packages/cocotb_tools/makefiles/Makefile.inc:17: sim] Error 2

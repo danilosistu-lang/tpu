@@ -1,13 +1,1 @@
-```
-# Compiled Python files
-__pycache__/
-*.pyc
-
-# Log files
-*.log
-
-# Test/build artifacts
-test/sim_build/
-test/*.fst
-test/results.xml
-```
+Nothing should be ignored based on the provided file changes. The only modified file is 'src/tt_um_tpu_top.v', which appears to be a source code file (likely Verilog/VHDL) and should not be ignored. There are no build artifacts, dependency directories, or temporary files in the changes that would warrant adding ignore rules.

@@ -79,6 +79,11 @@ module tt_um_tpu_top (
     wire tpu_busy;
 
     //--------------------------------------------------------------------------
+    // Declare output wire array for TPU output data (MUST be before instantiation)
+    //--------------------------------------------------------------------------
+    wire [7:0] out_data_internal [0:7];  // Fixed-size array for 8x8 array
+    
+    //--------------------------------------------------------------------------
     // Stream data registers for 8-bit wide interface
     //--------------------------------------------------------------------------
     reg [7:0] adata_reg;
@@ -154,9 +159,6 @@ module tt_um_tpu_top (
         .done(done),
         .interrupt(interrupt)
     );
-
-    // Declare output wire array before using it
-    wire [7:0] out_data_internal [7:0];  // Fixed-size array for 8x8 array
     
     // Connect first element of output array to uo_out
     assign uo_out = out_data_internal[0];
@@ -169,6 +171,20 @@ module tt_um_tpu_top (
     assign uio_out[2] = a_ready;    // Activation ready
     assign uio_out[3] = b_ready;    // Weight ready
     assign uio_out[7:4] = 4'b0000;  // Reserved
+
+    // Unused direct test interface signals - tie off
+    assign weight_load_en = 1'b0;
+    assign weight_addr = 4'd0;
+    assign weight_data = 8'd0;
+    assign activ_load_en = 1'b0;
+    assign activ_addr = 4'd0;
+    assign activ_data = 8'd0;
+    assign cmd_valid = 1'b0;
+    assign cmd_opcode = 3'd0;
+    assign cmd_arg = 32'd0;
+    assign done = 1'b0;
+    assign busy = 1'b0;
+    assign interrupt = 1'b0;
 
 endmodule
 
