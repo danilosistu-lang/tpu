@@ -24,7 +24,7 @@ module tb ();
   wire [7:0] uio_oe;
 
   // Replace tt_um_example with your module name:
-  tt_um_example user_project (
+  tt_um_tpu_top user_project (
       .ui_in  (ui_in),    // Dedicated inputs
       .uo_out (uo_out),   // Dedicated outputs
       .uio_in (uio_in),   // IOs: Input path
@@ -34,5 +34,20 @@ module tb ();
       .clk    (clk),      // clock
       .rst_n  (rst_n)     // not reset
   );
+  
+  // Expose internal signals for direct testing via cocotb
+  wire weight_load_en = user_project.weight_load_en;
+  wire [3:0] weight_addr = user_project.weight_addr;
+  wire [7:0] weight_data = user_project.weight_data;
+  wire activ_load_en = user_project.activ_load_en;
+  wire [3:0] activ_addr = user_project.activ_addr;
+  wire [7:0] activ_data = user_project.activ_data;
+  wire cmd_valid = user_project.cmd_valid;
+  wire [2:0] cmd_opcode = user_project.cmd_opcode;
+  wire [31:0] cmd_arg = user_project.cmd_arg;
+  wire cmd_ready = user_project.cmd_ready;
+  wire done = user_project.done;
+  wire busy = user_project.busy;
+  wire interrupt = user_project.interrupt;
 
 endmodule

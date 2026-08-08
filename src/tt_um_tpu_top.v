@@ -12,7 +12,7 @@
 
 `default_nettype none
 
-`include "rtl/tpu_params.v"
+`include "tpu_params.v"
 
 module tt_um_tpu_top (
     input  wire [7:0] ui_in,    // [0]=serial_data_in, [1]=cfg_wr_pulse, [2]=stream_valid
@@ -94,9 +94,21 @@ module tt_um_tpu_top (
     end
 
     //--------------------------------------------------------------------------
-    // Declare output wire array before TPU instantiation
+    // Internal wires for TPU output (8 lanes of 8-bit data)
     //--------------------------------------------------------------------------
-    wire [7:0] out_data_internal [7:0];  // 8x8 output array for systolic array
+    wire [7:0] tpu_out_data [0:7];
+    
+    //--------------------------------------------------------------------------
+    // Drive uo_out from the first lane of TPU output
+    //--------------------------------------------------------------------------
+    assign uo_out = tpu_out_data[0];
+    
+    //--------------------------------------------------------------------------
+    // Unused signals (tie off to prevent warnings)
+    //--------------------------------------------------------------------------
+    wire cmd_ready_unused;
+    wire [7:0] out_addr_unused;
+    wire done_unused;
 
     //--------------------------------------------------------------------------
     // Instantiate the 8x8 TPU Engine
@@ -116,17 +128,17 @@ module tt_um_tpu_top (
         // Host command interface (simplified for Tiny Tapeout)
         .cmd_opcode(3'b000),    // Idle/no command
         .cmd_valid(1'b0),
-        .cmd_ready(),
+        .cmd_ready(cmd_ready_unused),
         .cmd_arg(32'd0),
 
         // Weight loading interface (use config shift reg)
         .weight_load_en(cfg_wr_pulse),
-        .weight_addr(8'd0),
+        .weight_addr(4'd0),
         .weight_data(cfg_shift_reg[63:56]),  // Top byte of config
 
         // Activation loading interface
         .activ_load_en(stream_valid),
-        .activ_addr(8'd0),
+        .activ_addr(4'd0),
         .activ_data(adata_reg),
 
         // Quantization parameters (fixed for now)
@@ -136,12 +148,12 @@ module tt_um_tpu_top (
 
         // Output interface - connect to internal array
         .out_valid(o_valid),
-        .out_addr(),
-        .out_data(out_data_internal),
+        .out_addr(out_addr_unused),
+        .out_data(tpu_out_data),  // Connect to unpacked array
 
         // Status signals
         .busy(tpu_busy),
-        .done(),
+        .done(done_unused),
         .interrupt(tpu_irq)
     );
 

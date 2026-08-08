@@ -1,0 +1,16 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1786192084" />
+    <testcase name="test_basic_matmul_4x4" classname="test_tpu" file="/workspace/test/test_tpu.py" lineno="196" time="0.5353536605834961" sim_time_ns="5180.0" ratio_time="9675.846793228575">
+      <failure error_type="AssertionError" error_msg="TPU did not complete operation" />
+    </testcase>
+    <testcase name="test_basic_matmul_8x8" classname="test_tpu" file="/workspace/test/test_tpu.py" lineno="243" time="0.0060884952545166016" sim_time_ns="95.0" ratio_time="15603.198496299487">
+      <failure error_type="ValueError" error_msg="Int value (16) out of range for assignment of 4-bit signal ('weight_addr')" />
+    </testcase>
+    <testcase name="test_relu_activation" classname="test_tpu" file="/workspace/test/test_tpu.py" lineno="293" time="0.0015807151794433594" sim_time_ns="20.0" ratio_time="12652.500754147813" />
+    <testcase name="test_leakyrelu_activation" classname="test_tpu" file="/workspace/test/test_tpu.py" lineno="322" time="0.0013380050659179688" sim_time_ns="20.0" ratio_time="14947.626514611547" />
+    <testcase name="test_quantization" classname="test_tpu" file="/workspace/test/test_tpu.py" lineno="346" time="0.0012128353118896484" sim_time_ns="20.0" ratio_time="16490.2850402988" />
+    <testcase name="test_overflow_behavior" classname="test_tpu" file="/workspace/test/test_tpu.py" lineno="370" time="0.001150369644165039" sim_time_ns="20.0" ratio_time="17385.716062176165" />
+    <testcase name="test_matrix_16x16" classname="test_tpu" file="/workspace/test/test_tpu.py" lineno="400" time="0.0115203857421875" sim_time_ns="20.0" ratio_time="1736.0529801324503" />
+  </testsuite>
+</testsuites>

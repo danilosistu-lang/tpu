@@ -36,14 +36,14 @@ module tpu_top #(
     // Weight Data Interface (for loading weight matrix)
     //==========================================================================
     input  wire                 weight_load_en,
-    input  wire [5:0]           weight_addr,    // Address in weight buffer (6 bits for 8x8=64 elements)
+    input  wire [3:0]           weight_addr,    // Address in weight buffer (4 bits for 16 elements)
     input  wire [WEIGHT_W-1:0]  weight_data,    // Weight data to load
     
     //==========================================================================
     // Activation Data Interface (for loading activation matrix)
     //==========================================================================
     input  wire                 activ_load_en,
-    input  wire [5:0]           activ_addr,     // Address in activation buffer (6 bits for 8x8=64 elements)
+    input  wire [3:0]           activ_addr,     // Address in activation buffer (4 bits for 16 elements)
     input  wire [ACTIV_W-1:0]   activ_data,     // Activation data to load
     
     //==========================================================================
