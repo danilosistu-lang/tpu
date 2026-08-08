@@ -7,7 +7,7 @@
 // - 8 output pins (uo_out)  
 // - 8 bidirectional pins (uio_in/uio_out)
 //
-// Includes a Serial-to-Parallel shift register to load the 64-bit config word
+// Includes a bit-serial shift register to load the 64-bit config word
 //============================================================================
 
 `default_nettype none
@@ -31,7 +31,7 @@ module tt_um_tpu_top (
     assign uio_oe = 8'b0000_1111;
 
     //--------------------------------------------------------------------------
-    // Shift register to load the 64-bit config word 1 byte at a time
+    // Shift register to load the 64-bit config word one bit at a time
     // Config format:
     //   [63:56] = Row 7 activation data (or weight row)
     //   [55:48] = Row 6
@@ -40,7 +40,7 @@ module tt_um_tpu_top (
     //   [31:24] = Row 3
     //   [23:16] = Row 2
     //   [15:8]  = Row 1
-    //   [7:0]   = Row 0 (first byte shifted in)
+    //   [7:0]   = Row 0 (first bits shifted in)
     //--------------------------------------------------------------------------
     reg [63:0] cfg_shift_reg;
     wire serial_data_in = ui_in[0];
@@ -51,17 +51,34 @@ module tt_um_tpu_top (
         if (!rst_n)
             cfg_shift_reg <= 64'd0;
         else if (cfg_wr_pulse)
-            cfg_shift_reg <= {cfg_shift_reg[55:0], serial_data_in};
+            cfg_shift_reg <= {cfg_shift_reg[62:0], serial_data_in};
     end
 
     //--------------------------------------------------------------------------
-    // Ready signals from TPU (handshake for streaming interface)
+    // Named internal interface signals (also useful for testbench visibility)
     //--------------------------------------------------------------------------
-    wire a_ready;
-    wire b_ready;
-    wire o_valid;
-    wire tpu_irq;
-    wire tpu_busy;
+    wire [2:0]  cmd_opcode     = 3'b000;  // Idle/no command
+    wire        cmd_valid      = 1'b0;
+    wire [31:0] cmd_arg        = 32'd0;
+    wire        cmd_ready;
+
+    wire        weight_load_en = cfg_wr_pulse;
+    wire [3:0]  weight_addr    = 4'd0;
+    wire [7:0]  weight_data    = cfg_shift_reg[63:56];
+
+    wire        activ_load_en  = stream_valid;
+    wire [3:0]  activ_addr     = 4'd0;
+    wire [7:0]  activ_data     = adata_reg;
+
+    // The simplified Tiny Tapeout wrapper does not expose backpressure from the
+    // TPU core, so advertise the local byte capture path as always ready.
+    wire        a_ready        = 1'b1;
+    wire        b_ready        = 1'b1;
+
+    wire        o_valid;
+    wire        interrupt;
+    wire        busy;
+    wire        done;
 
     //--------------------------------------------------------------------------
     // Stream data registers for 8-bit wide interface
@@ -96,19 +113,17 @@ module tt_um_tpu_top (
     //--------------------------------------------------------------------------
     // Internal wires for TPU output (8 lanes of 8-bit data)
     //--------------------------------------------------------------------------
-    wire [7:0] tpu_out_data [0:7];
+    wire [63:0] tpu_out_data;
     
     //--------------------------------------------------------------------------
     // Drive uo_out from the first lane of TPU output
     //--------------------------------------------------------------------------
-    assign uo_out = tpu_out_data[0];
+    assign uo_out = tpu_out_data[7:0];
     
     //--------------------------------------------------------------------------
-    // Unused signals (tie off to prevent warnings)
+    // Unused TPU output fields
     //--------------------------------------------------------------------------
-    wire cmd_ready_unused;
     wire [7:0] out_addr_unused;
-    wire done_unused;
 
     //--------------------------------------------------------------------------
     // Instantiate the 8x8 TPU Engine
@@ -126,20 +141,20 @@ module tt_um_tpu_top (
         .rst_n(rst_n),
 
         // Host command interface (simplified for Tiny Tapeout)
-        .cmd_opcode(3'b000),    // Idle/no command
-        .cmd_valid(1'b0),
-        .cmd_ready(cmd_ready_unused),
-        .cmd_arg(32'd0),
+        .cmd_opcode(cmd_opcode),
+        .cmd_valid(cmd_valid),
+        .cmd_ready(cmd_ready),
+        .cmd_arg(cmd_arg),
 
         // Weight loading interface (use config shift reg)
-        .weight_load_en(cfg_wr_pulse),
-        .weight_addr(4'd0),
-        .weight_data(cfg_shift_reg[63:56]),  // Top byte of config
+        .weight_load_en(weight_load_en),
+        .weight_addr(weight_addr),
+        .weight_data(weight_data),  // Top byte of config
 
         // Activation loading interface
-        .activ_load_en(stream_valid),
-        .activ_addr(4'd0),
-        .activ_data(adata_reg),
+        .activ_load_en(activ_load_en),
+        .activ_addr(activ_addr),
+        .activ_data(activ_data),
 
         // Quantization parameters (fixed for now)
         .quant_scale(16'd256),   // Scale = 1.0 (Q8.8 format)
@@ -149,24 +164,19 @@ module tt_um_tpu_top (
         // Output interface - connect to internal array
         .out_valid(o_valid),
         .out_addr(out_addr_unused),
-        .out_data(tpu_out_data),  // Connect to unpacked array
+        .out_data(tpu_out_data),  // Connect to flattened output lanes
 
         // Status signals
-        .busy(tpu_busy),
-        .done(done_unused),
-        .interrupt(tpu_irq)
+        .busy(busy),
+        .done(done),
+        .interrupt(interrupt)
     );
-
-    //--------------------------------------------------------------------------
-    // Connect first element of output array to uo_out
-    //--------------------------------------------------------------------------
-    assign uo_out = out_data_internal[0];
 
     //--------------------------------------------------------------------------
     // Drive bidirectional status outputs
     //--------------------------------------------------------------------------
-    assign uio_out[0] = tpu_irq;    // IRQ signal
-    assign uio_out[1] = tpu_busy;   // Busy signal
+    assign uio_out[0] = interrupt;  // IRQ signal
+    assign uio_out[1] = busy;       // Busy signal
     assign uio_out[2] = a_ready;    // Activation ready
     assign uio_out[3] = b_ready;    // Weight ready
     assign uio_out[7:4] = 4'b0000;  // Reserved
