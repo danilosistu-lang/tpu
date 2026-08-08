@@ -55,13 +55,30 @@ module tt_um_tpu_top (
     end
 
     //--------------------------------------------------------------------------
-    // Ready signals from TPU (handshake for streaming interface)
+    // Named internal interface signals (also useful for testbench visibility)
     //--------------------------------------------------------------------------
-    wire a_ready;
-    wire b_ready;
-    wire o_valid;
-    wire tpu_irq;
-    wire tpu_busy;
+    wire [2:0]  cmd_opcode     = 3'b000;  // Idle/no command
+    wire        cmd_valid      = 1'b0;
+    wire [31:0] cmd_arg        = 32'd0;
+    wire        cmd_ready;
+
+    wire        weight_load_en = cfg_wr_pulse;
+    wire [3:0]  weight_addr    = 4'd0;
+    wire [7:0]  weight_data    = cfg_shift_reg[63:56];
+
+    wire        activ_load_en  = stream_valid;
+    wire [3:0]  activ_addr     = 4'd0;
+    wire [7:0]  activ_data     = adata_reg;
+
+    // The simplified Tiny Tapeout wrapper does not expose backpressure from the
+    // TPU core, so advertise the local byte capture path as always ready.
+    wire        a_ready        = 1'b1;
+    wire        b_ready        = 1'b1;
+
+    wire        o_valid;
+    wire        interrupt;
+    wire        busy;
+    wire        done;
 
     //--------------------------------------------------------------------------
     // Stream data registers for 8-bit wide interface
@@ -104,11 +121,9 @@ module tt_um_tpu_top (
     assign uo_out = tpu_out_data[7:0];
     
     //--------------------------------------------------------------------------
-    // Unused signals (tie off to prevent warnings)
+    // Unused TPU output fields
     //--------------------------------------------------------------------------
-    wire cmd_ready_unused;
     wire [7:0] out_addr_unused;
-    wire done_unused;
 
     //--------------------------------------------------------------------------
     // Instantiate the 8x8 TPU Engine
@@ -126,20 +141,20 @@ module tt_um_tpu_top (
         .rst_n(rst_n),
 
         // Host command interface (simplified for Tiny Tapeout)
-        .cmd_opcode(3'b000),    // Idle/no command
-        .cmd_valid(1'b0),
-        .cmd_ready(cmd_ready_unused),
-        .cmd_arg(32'd0),
+        .cmd_opcode(cmd_opcode),
+        .cmd_valid(cmd_valid),
+        .cmd_ready(cmd_ready),
+        .cmd_arg(cmd_arg),
 
         // Weight loading interface (use config shift reg)
-        .weight_load_en(cfg_wr_pulse),
-        .weight_addr(4'd0),
-        .weight_data(cfg_shift_reg[63:56]),  // Top byte of config
+        .weight_load_en(weight_load_en),
+        .weight_addr(weight_addr),
+        .weight_data(weight_data),  // Top byte of config
 
         // Activation loading interface
-        .activ_load_en(stream_valid),
-        .activ_addr(4'd0),
-        .activ_data(adata_reg),
+        .activ_load_en(activ_load_en),
+        .activ_addr(activ_addr),
+        .activ_data(activ_data),
 
         // Quantization parameters (fixed for now)
         .quant_scale(16'd256),   // Scale = 1.0 (Q8.8 format)
@@ -152,16 +167,16 @@ module tt_um_tpu_top (
         .out_data(tpu_out_data),  // Connect to flattened output lanes
 
         // Status signals
-        .busy(tpu_busy),
-        .done(done_unused),
-        .interrupt(tpu_irq)
+        .busy(busy),
+        .done(done),
+        .interrupt(interrupt)
     );
 
     //--------------------------------------------------------------------------
     // Drive bidirectional status outputs
     //--------------------------------------------------------------------------
-    assign uio_out[0] = tpu_irq;    // IRQ signal
-    assign uio_out[1] = tpu_busy;   // Busy signal
+    assign uio_out[0] = interrupt;  // IRQ signal
+    assign uio_out[1] = busy;       // Busy signal
     assign uio_out[2] = a_ready;    // Activation ready
     assign uio_out[3] = b_ready;    // Weight ready
     assign uio_out[7:4] = 4'b0000;  // Reserved
