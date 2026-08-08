@@ -22,7 +22,7 @@ module activation_unit #(
     input  wire                 enable,
     
     // Accumulator inputs from systolic array (N parallel lanes)
-    input  wire [ACCUM_W-1:0]   accum_in [N-1:0],
+    input  wire [N-1:0][ACCUM_W-1:0]   accum_in,
     
     // Activation function control
     input  wire [1:0]           act_type,       // ACT_NONE, ACT_RELU, ACT_LEAKYRELU, ACT_QUANT
@@ -36,7 +36,7 @@ module activation_unit #(
     input  wire                 signed_out,
     
     // Activated outputs
-    output wire [OUTPUT_W-1:0]  activated_out [N-1:0],
+    output wire [N-1:0][OUTPUT_W-1:0]  activated_out,
     
     // Status
     output wire                 done
@@ -47,10 +47,10 @@ module activation_unit #(
     //--------------------------------------------------------------------------
     // Per-lane activation processing
     //--------------------------------------------------------------------------
-    reg [ACCUM_W-1:0] relu_result [N-1:0];
-    reg [ACCUM_W-1:0] leakyrelu_result [N-1:0];
-    reg [OUTPUT_W-1:0] quant_result [N-1:0];
-    reg [OUTPUT_W-1:0] final_mux_out [N-1:0];
+    reg [N-1:0][ACCUM_W-1:0] relu_result;
+    reg [N-1:0][ACCUM_W-1:0] leakyrelu_result;
+    reg [N-1:0][OUTPUT_W-1:0] quant_result;
+    reg [N-1:0][OUTPUT_W-1:0] final_mux_out;
     
     generate
         for (i = 0; i < N; i = i + 1) begin : activation_lanes
