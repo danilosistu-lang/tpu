@@ -58,7 +58,7 @@ module tpu_top #(
     //==========================================================================
     output wire                 out_valid,      // Output data valid
     output wire [7:0]           out_addr,       // Output address/index
-    output wire [OUTPUT_W-1:0]  out_data [N-1:0], // Output data (N lanes)
+    output wire [N*OUTPUT_W-1:0] out_data,       // Output data (flattened N lanes)
     
     //==========================================================================
     // Status & Interrupts
@@ -277,6 +277,11 @@ module tpu_top #(
     end
     assign out_valid = out_valid_reg;
     assign out_addr = buf_addr;
-    assign out_data = activated_out;
+    genvar out_i;
+    generate
+        for (out_i = 0; out_i < N; out_i = out_i + 1) begin : gen_flatten_out
+            assign out_data[out_i*OUTPUT_W +: OUTPUT_W] = activated_out[out_i];
+        end
+    endgenerate
 
 endmodule

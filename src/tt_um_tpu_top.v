@@ -96,12 +96,12 @@ module tt_um_tpu_top (
     //--------------------------------------------------------------------------
     // Internal wires for TPU output (8 lanes of 8-bit data)
     //--------------------------------------------------------------------------
-    wire [7:0] tpu_out_data [0:7];
+    wire [63:0] tpu_out_data;
     
     //--------------------------------------------------------------------------
     // Drive uo_out from the first lane of TPU output
     //--------------------------------------------------------------------------
-    assign uo_out = tpu_out_data[0];
+    assign uo_out = tpu_out_data[7:0];
     
     //--------------------------------------------------------------------------
     // Unused signals (tie off to prevent warnings)
@@ -149,18 +149,13 @@ module tt_um_tpu_top (
         // Output interface - connect to internal array
         .out_valid(o_valid),
         .out_addr(out_addr_unused),
-        .out_data(tpu_out_data),  // Connect to unpacked array
+        .out_data(tpu_out_data),  // Connect to flattened output lanes
 
         // Status signals
         .busy(tpu_busy),
         .done(done_unused),
         .interrupt(tpu_irq)
     );
-
-    //--------------------------------------------------------------------------
-    // Connect first element of output array to uo_out
-    //--------------------------------------------------------------------------
-    assign uo_out = out_data_internal[0];
 
     //--------------------------------------------------------------------------
     // Drive bidirectional status outputs
