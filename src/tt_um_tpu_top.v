@@ -7,7 +7,7 @@
 // - 8 output pins (uo_out)  
 // - 8 bidirectional pins (uio_in/uio_out)
 //
-// Includes a Serial-to-Parallel shift register to load the 64-bit config word
+// Includes a bit-serial shift register to load the 64-bit config word
 //============================================================================
 
 `default_nettype none
@@ -31,7 +31,7 @@ module tt_um_tpu_top (
     assign uio_oe = 8'b0000_1111;
 
     //--------------------------------------------------------------------------
-    // Shift register to load the 64-bit config word 1 byte at a time
+    // Shift register to load the 64-bit config word one bit at a time
     // Config format:
     //   [63:56] = Row 7 activation data (or weight row)
     //   [55:48] = Row 6
@@ -40,7 +40,7 @@ module tt_um_tpu_top (
     //   [31:24] = Row 3
     //   [23:16] = Row 2
     //   [15:8]  = Row 1
-    //   [7:0]   = Row 0 (first byte shifted in)
+    //   [7:0]   = Row 0 (first bits shifted in)
     //--------------------------------------------------------------------------
     reg [63:0] cfg_shift_reg;
     wire serial_data_in = ui_in[0];
@@ -51,7 +51,7 @@ module tt_um_tpu_top (
         if (!rst_n)
             cfg_shift_reg <= 64'd0;
         else if (cfg_wr_pulse)
-            cfg_shift_reg <= {cfg_shift_reg[55:0], serial_data_in};
+            cfg_shift_reg <= {cfg_shift_reg[62:0], serial_data_in};
     end
 
     //--------------------------------------------------------------------------
