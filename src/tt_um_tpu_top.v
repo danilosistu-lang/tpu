@@ -94,9 +94,9 @@ module tt_um_tpu_top (
     end
 
     //--------------------------------------------------------------------------
-    // Internal wires for TPU output (8 lanes of 8-bit data)
+    // Internal wires for TPU output (8 lanes of 8-bit data, packed array)
     //--------------------------------------------------------------------------
-    wire [7:0] tpu_out_data [0:7];
+    wire [8-1:0][8-1:0] tpu_out_data;
     
     //--------------------------------------------------------------------------
     // Drive uo_out from the first lane of TPU output
@@ -146,10 +146,10 @@ module tt_um_tpu_top (
         .quant_shift(8'd0),      // No shift
         .leaky_slope(8'd16),     // LeakyReLU slope = 0.0625
 
-        // Output interface - connect to internal array
+        // Output interface - connect to packed array
         .out_valid(o_valid),
         .out_addr(out_addr_unused),
-        .out_data(tpu_out_data),  // Connect to unpacked array
+        .out_data(tpu_out_data),
 
         // Status signals
         .busy(tpu_busy),
