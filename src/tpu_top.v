@@ -58,7 +58,7 @@ module tpu_top #(
     //==========================================================================
     output wire                 out_valid,      // Output data valid
     output wire [7:0]           out_addr,       // Output address/index
-    output wire [OUTPUT_W-1:0]  out_data [N-1:0], // Output data (N lanes)
+    output wire [N-1:0][OUTPUT_W-1:0]  out_data, // Output data (N lanes, packed array)
     
     //==========================================================================
     // Status & Interrupts
@@ -88,7 +88,7 @@ module tpu_top #(
     wire [ACCUM_W-1:0]  accum_from_sa [N-1:0][N-1:0];
     
     // Activation unit interface
-    wire [OUTPUT_W-1:0] activated_out [N-1:0];
+    wire [N-1:0][OUTPUT_W-1:0] activated_out;
     wire                act_done;
     
     // Buffer outputs
@@ -228,7 +228,7 @@ module tpu_top #(
     //--------------------------------------------------------------------------
     // For simplicity, we process one row of outputs at a time
     // In a full implementation, this would be fully parallel
-    wire [ACCUM_W-1:0] row_accum [N-1:0];
+    wire [N-1:0][ACCUM_W-1:0] row_accum;
     
     genvar i;
     generate
