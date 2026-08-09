@@ -50,16 +50,11 @@ module systolic_array #(
     endgenerate
 
     //--------------------------------------------------------------------------
-    // Internal wires for PE interconnect
+    // Internal wires for PE interconnect (unpacked 2D arrays are standard Verilog)
     //--------------------------------------------------------------------------
     wire [WEIGHT_W-1:0]    weight_wires [N-1:0][N-1:0];  // weight[row][col]
     wire [ACTIV_W-1:0]     act_wires [N-1:0][N-1:0];     // act[row][col]
-    wire [N-1:0][N-1:0]    pe_enable;
-    wire [N-1:0][N-1:0]    pe_load_weight;
-    wire [N-1:0][N-1:0]    pe_clear_accum;
     
-    wire [ACCUM_W-1:0]     accum_out_unpacked [N-1:0][N-1:0];
-
     genvar i, j;
     
     //--------------------------------------------------------------------------
@@ -79,17 +74,6 @@ module systolic_array #(
                 wire [ACTIV_W-1:0] pe_act_in;
                 assign pe_act_in = (j == 0) ? act_in_unpacked[i] : act_wires[i][j-1];
                 
-                // Store weight output (to PE below)
-                assign weight_wires[i][j] = pe_weight_in;  // Will be driven by PE
-                
-                // Store activation output (to PE right)
-                assign act_wires[i][j] = pe_act_in;  // Will be driven by PE
-                
-                // Global control signals to all PEs
-                assign pe_enable[i][j] = enable;
-                assign pe_load_weight[i][j] = load_weight;
-                assign pe_clear_accum[i][j] = clear_accum;
-                
                 // Instantiate PE
                 pe #(
                     .WEIGHT_W   (WEIGHT_W),
@@ -99,19 +83,17 @@ module systolic_array #(
                 ) u_pe (
                     .clk              (clk),
                     .rst_n            (rst_n),
-                    .enable           (pe_enable[i][j]),
+                    .enable           (enable),
                     .act_in_west      (pe_act_in),
                     .act_out_east     (act_wires[i][j]),
                     .weight_in_north  (pe_weight_in),
                     .weight_out_south (weight_wires[i][j]),
-                    .load_weight      (pe_load_weight[i][j]),
-                    .clear_accum      (pe_clear_accum[i][j]),
+                    .load_weight      (load_weight),
+                    .clear_accum      (clear_accum),
                     .signed_mode      (signed_mode),
-                    .accum_out        (accum_out_unpacked[i][j])
+                    .accum_out        (accum_out[(i*N + j)*ACCUM_W +: ACCUM_W])
                 );
                 
-                // Pack accum_out_unpacked into flat 1D output vector
-                assign accum_out[(i*N + j)*ACCUM_W +: ACCUM_W] = accum_out_unpacked[i][j];
             end
         end
     endgenerate
