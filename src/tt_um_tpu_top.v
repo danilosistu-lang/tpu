@@ -78,18 +78,20 @@ module tt_um_tpu_top (
             bdata_reg <= 8'd0;
             adata_valid <= 1'b0;
             bdata_valid <= 1'b0;
-        end else if (stream_valid) begin
-            adata_reg <= ui_in[7:0];
-            bdata_reg <= ui_in[7:0];
-            adata_valid <= 1'b1;
-            bdata_valid <= 1'b1;
-        end else if (a_ready) begin
-            adata_valid <= 1'b0;
-        end
-        if (b_ready && stream_valid) begin
-            bdata_valid <= 1'b1;
-        end else if (b_ready) begin
-            bdata_valid <= 1'b0;
+        end else begin
+            if (stream_valid) begin
+                adata_reg <= ui_in[7:0];
+                bdata_reg <= ui_in[7:0];
+                adata_valid <= 1'b1;
+                bdata_valid <= 1'b1;
+            end else begin
+                if (a_ready) begin
+                    adata_valid <= 1'b0;
+                end
+                if (b_ready) begin
+                    bdata_valid <= 1'b0;
+                end
+            end
         end
     end
 
@@ -148,12 +150,12 @@ module tt_um_tpu_top (
 
         // Weight loading interface (use config shift reg)
         .weight_load_en(weight_load_en),
-        .weight_addr(weight_addr),
+        .weight_addr({4'd0, weight_addr}),
         .weight_data(weight_data),  // Top byte of config
 
         // Activation loading interface
         .activ_load_en(activ_load_en),
-        .activ_addr(activ_addr),
+        .activ_addr({4'd0, activ_addr}),
         .activ_data(activ_data),
 
         // Quantization parameters (fixed for now)

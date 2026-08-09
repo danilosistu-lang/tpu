@@ -149,7 +149,7 @@ module tpu_top #(
         .rst_n(rst_n),
         .enable(sa_enable),
         .load_en(weight_load_en || (buf_load_en && cmd_opcode == 3'b001)),
-        .load_addr(weight_addr),
+        .load_addr(weight_addr[3:0]),
         .load_data(weight_data),
         .buffer_out(weight_buffer_out)
     );
@@ -166,7 +166,7 @@ module tpu_top #(
         .rst_n(rst_n),
         .enable(sa_enable),
         .load_en(activ_load_en || (buf_load_en && cmd_opcode == 3'b010)),
-        .load_addr(activ_addr),
+        .load_addr(activ_addr[3:0]),
         .load_data(activ_data),
         .buffer_out(activ_buffer_out)
     );
