@@ -57,8 +57,8 @@ module tt_um_tpu_top (
     //--------------------------------------------------------------------------
     // Ready signals from TPU (handshake for streaming interface)
     //--------------------------------------------------------------------------
-    wire a_ready;
-    wire b_ready;
+    wire a_ready = 1'b1;
+    wire b_ready = 1'b1;
     wire o_valid;
     wire tpu_irq;
     wire tpu_busy;
