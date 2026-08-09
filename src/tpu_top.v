@@ -36,14 +36,14 @@ module tpu_top #(
     // Weight Data Interface (for loading weight matrix)
     //==========================================================================
     input  wire                 weight_load_en,
-    input  wire [3:0]           weight_addr,    // Address in weight buffer (4 bits for 16 elements)
+    input  wire [7:0]           weight_addr,    // Address in weight buffer (8 bits for compatibility)
     input  wire [WEIGHT_W-1:0]  weight_data,    // Weight data to load
     
     //==========================================================================
     // Activation Data Interface (for loading activation matrix)
     //==========================================================================
     input  wire                 activ_load_en,
-    input  wire [3:0]           activ_addr,     // Address in activation buffer (4 bits for 16 elements)
+    input  wire [7:0]           activ_addr,     // Address in activation buffer (8 bits for compatibility)
     input  wire [ACTIV_W-1:0]   activ_data,     // Activation data to load
     
     //==========================================================================
@@ -58,7 +58,7 @@ module tpu_top #(
     //==========================================================================
     output wire                 out_valid,      // Output data valid
     output wire [7:0]           out_addr,       // Output address/index
-    output wire [N-1:0][OUTPUT_W-1:0]  out_data, // Output data (N lanes, packed array)
+    output wire [N*OUTPUT_W-1:0] out_data,      // Output data (flattened N lanes)
     
     //==========================================================================
     // Status & Interrupts
@@ -82,18 +82,18 @@ module tpu_top #(
     wire                skew_enable;
     wire                drain_enable;
     
-    // Systolic array interfaces
-    wire [WEIGHT_W-1:0] weight_to_sa [N-1:0];
-    wire [ACTIV_W-1:0]  activ_to_sa [N-1:0];
-    wire [ACCUM_W-1:0]  accum_from_sa [N-1:0][N-1:0];
+    // Systolic array interfaces (flattened)
+    wire [N*WEIGHT_W-1:0] weight_to_sa;
+    wire [N*ACTIV_W-1:0]  activ_to_sa;
+    wire [N*N*ACCUM_W-1:0] accum_from_sa;
     
-    // Activation unit interface
-    wire [N-1:0][OUTPUT_W-1:0] activated_out;
+    // Activation unit interface (flattened)
+    wire [N*OUTPUT_W-1:0] activated_out;
     wire                act_done;
     
-    // Buffer outputs
-    wire [WEIGHT_W-1:0] weight_buffer_out [N-1:0];
-    wire [ACTIV_W-1:0]  activ_buffer_out [N-1:0];
+    // Buffer outputs (flattened)
+    wire [N*WEIGHT_W-1:0] weight_buffer_out;
+    wire [N*ACTIV_W-1:0]  activ_buffer_out;
     
     //--------------------------------------------------------------------------
     // Control FSM Instance
@@ -185,6 +185,9 @@ module tpu_top #(
         .data_out(weight_to_sa)
     );
     
+    //--------------------------------------------------------------------------
+    // Skew units for diagonal data delivery
+    //--------------------------------------------------------------------------
     buffer_skew #(
         .N(N),
         .DATA_W(ACTIV_W)
@@ -226,15 +229,15 @@ module tpu_top #(
     //--------------------------------------------------------------------------
     // Post-Processing Activation Unit
     //--------------------------------------------------------------------------
-    // For simplicity, we process one row of outputs at a time
-    // In a full implementation, this would be fully parallel
-    wire [N-1:0][ACCUM_W-1:0] row_accum;
+    // For simplicity, we process one row of outputs at a time (e.g. column 0)
+    // row_accum is flattened to 1D vector N*ACCUM_W bits.
+    wire [N*ACCUM_W-1:0] row_accum;
     
     genvar i;
     generate
         for (i = 0; i < N; i = i + 1) begin : row_select
-            // Select which row to process (could be extended for full parallel)
-            assign row_accum[i] = accum_from_sa[i][0];  // First column for now
+            // Extract accum_out of PE(i, 0)
+            assign row_accum[i*ACCUM_W +: ACCUM_W] = accum_from_sa[(i*N)*ACCUM_W +: ACCUM_W];
         end
     endgenerate
     

@@ -36,18 +36,43 @@ module tb ();
   );
   
   // Expose internal signals for direct testing via cocotb
-  wire weight_load_en = user_project.weight_load_en;
-  wire [3:0] weight_addr = user_project.weight_addr;
-  wire [7:0] weight_data = user_project.weight_data;
-  wire activ_load_en = user_project.activ_load_en;
-  wire [3:0] activ_addr = user_project.activ_addr;
-  wire [7:0] activ_data = user_project.activ_data;
-  wire cmd_valid = user_project.cmd_valid;
-  wire [2:0] cmd_opcode = user_project.cmd_opcode;
-  wire [31:0] cmd_arg = user_project.cmd_arg;
   wire cmd_ready = user_project.cmd_ready;
   wire done = user_project.done;
   wire busy = user_project.busy;
   wire interrupt = user_project.interrupt;
+
+`ifndef GL_TEST
+  reg cmd_valid;
+  reg [2:0] cmd_opcode;
+  reg [31:0] cmd_arg;
+  reg weight_load_en;
+  reg [7:0] weight_addr;
+  reg [7:0] weight_data;
+  reg activ_load_en;
+  reg [7:0] activ_addr;
+  reg [7:0] activ_data;
+
+  initial begin
+    force user_project.u_tpu.cmd_valid = cmd_valid;
+    force user_project.u_tpu.cmd_opcode = cmd_opcode;
+    force user_project.u_tpu.cmd_arg = cmd_arg;
+    force user_project.u_tpu.weight_load_en = weight_load_en;
+    force user_project.u_tpu.weight_addr = weight_addr;
+    force user_project.u_tpu.weight_data = weight_data;
+    force user_project.u_tpu.activ_load_en = activ_load_en;
+    force user_project.u_tpu.activ_addr = activ_addr;
+    force user_project.u_tpu.activ_data = activ_data;
+  end
+`else
+  wire weight_load_en = user_project.weight_load_en;
+  wire [7:0] weight_addr = user_project.weight_addr;
+  wire [7:0] weight_data = user_project.weight_data;
+  wire activ_load_en = user_project.activ_load_en;
+  wire [7:0] activ_addr = user_project.activ_addr;
+  wire [7:0] activ_data = user_project.activ_data;
+  wire cmd_valid = user_project.cmd_valid;
+  wire [2:0] cmd_opcode = user_project.cmd_opcode;
+  wire [31:0] cmd_arg = user_project.cmd_arg;
+`endif
 
 endmodule

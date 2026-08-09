@@ -28,15 +28,26 @@ module systolic_array #(
     input  wire                   clear_accum,
     input  wire                   signed_mode,
     
-    // Weight inputs (N columns, one per PE column at top row)
-    input  wire [WEIGHT_W-1:0]    weight_in [N-1:0],
+    // Weight inputs (N columns, one per PE column at top row, 1D flat vector)
+    input  wire [N*WEIGHT_W-1:0]  weight_in,
     
-    // Activation inputs (N rows, one per PE row at left column)
-    input  wire [ACTIV_W-1:0]     act_in [N-1:0],
+    // Activation inputs (N rows, one per PE row at left column, 1D flat vector)
+    input  wire [N*ACTIV_W-1:0]   act_in,
     
-    // Accumulator outputs (N rows at bottom, N columns)
-    output wire [ACCUM_W-1:0]     accum_out [N-1:0][N-1:0]
+    // Accumulator outputs (N rows at bottom, N columns, 1D flat vector)
+    output wire [N*N*ACCUM_W-1:0] accum_out
 );
+
+    // Unpack weight_in and act_in from 1D flat vectors
+    wire [WEIGHT_W-1:0] weight_in_unpacked [N-1:0];
+    wire [ACTIV_W-1:0]  act_in_unpacked [N-1:0];
+    genvar u_i;
+    generate
+        for (u_i = 0; u_i < N; u_i = u_i + 1) begin : unpack_inputs
+            assign weight_in_unpacked[u_i] = weight_in[u_i*WEIGHT_W +: WEIGHT_W];
+            assign act_in_unpacked[u_i] = act_in[u_i*ACTIV_W +: ACTIV_W];
+        end
+    endgenerate
 
     //--------------------------------------------------------------------------
     // Internal wires for PE interconnect
@@ -47,6 +58,8 @@ module systolic_array #(
     wire [N-1:0][N-1:0]    pe_load_weight;
     wire [N-1:0][N-1:0]    pe_clear_accum;
     
+    wire [ACCUM_W-1:0]     accum_out_unpacked [N-1:0][N-1:0];
+
     genvar i, j;
     
     //--------------------------------------------------------------------------
@@ -59,12 +72,12 @@ module systolic_array #(
                 // Determine weight input for this PE
                 // Top row gets external weight, others get from PE above
                 wire [WEIGHT_W-1:0] pe_weight_in;
-                assign pe_weight_in = (i == 0) ? weight_in[j] : weight_wires[i-1][j];
+                assign pe_weight_in = (i == 0) ? weight_in_unpacked[j] : weight_wires[i-1][j];
                 
                 // Determine activation input for this PE
                 // Left column gets external act, others get from PE to the left
                 wire [ACTIV_W-1:0] pe_act_in;
-                assign pe_act_in = (j == 0) ? act_in[i] : act_wires[i][j-1];
+                assign pe_act_in = (j == 0) ? act_in_unpacked[i] : act_wires[i][j-1];
                 
                 // Store weight output (to PE below)
                 assign weight_wires[i][j] = pe_weight_in;  // Will be driven by PE
@@ -94,9 +107,11 @@ module systolic_array #(
                     .load_weight      (pe_load_weight[i][j]),
                     .clear_accum      (pe_clear_accum[i][j]),
                     .signed_mode      (signed_mode),
-                    .accum_out        (accum_out[i][j])
+                    .accum_out        (accum_out_unpacked[i][j])
                 );
                 
+                // Pack accum_out_unpacked into flat 1D output vector
+                assign accum_out[(i*N + j)*ACCUM_W +: ACCUM_W] = accum_out_unpacked[i][j];
             end
         end
     endgenerate

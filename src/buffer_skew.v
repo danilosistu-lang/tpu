@@ -22,19 +22,27 @@ module buffer_skew #(
     input  wire                 rst_n,
     input  wire                 enable,
     
-    // Raw input (one per row/column)
-    input  wire [DATA_W-1:0]    data_in [N-1:0],
+    // Raw input (one per row/column, flattened to 1D vector)
+    input  wire [N*DATA_W-1:0]  data_in,
     
     // Skewed output with diagonal delays
-    output wire [DATA_W-1:0]    data_out [N-1:0]
+    output wire [N*DATA_W-1:0]  data_out
 );
+
+    // Unpack 1D input port to internal unpacked array
+    wire [DATA_W-1:0] data_in_unpacked [N-1:0];
+    genvar u_i;
+    generate
+        for (u_i = 0; u_i < N; u_i = u_i + 1) begin : unpack_data_in
+            assign data_in_unpacked[u_i] = data_in[u_i*DATA_W +: DATA_W];
+        end
+    endgenerate
 
     //--------------------------------------------------------------------------
     // Internal delay registers for each row
     // Row i has i stages of delay
     //--------------------------------------------------------------------------
     reg [DATA_W-1:0] delay_regs [N-1:0][N-1:0];  // delay_regs[row][stage]
-    wire [DATA_W-1:0] stage_output [N-1:0][N-1:0];
     
     genvar i, j;
     
@@ -48,13 +56,13 @@ module buffer_skew #(
                 if (!rst_n) begin
                     delay_regs[i][0] <= 'b0;
                 end else if (enable) begin
-                    delay_regs[i][0] <= data_in[i];
+                    delay_regs[i][0] <= data_in_unpacked[i];
                 end
             end
             
             // Additional delay stages for rows that need them
             for (j = 1; j < N; j = j + 1) begin : delay_stages
-                if (j <= i) begin
+                if (j <= i) begin : stage_needed
                     // This row needs this delay stage
                     always @(posedge clk or negedge rst_n) begin
                         if (!rst_n) begin
@@ -68,7 +76,7 @@ module buffer_skew #(
             
             // Output is taken from the appropriate delay stage
             // Row i outputs from stage i (or stage 0 if i=0)
-            assign data_out[i] = (i == 0) ? data_in[i] : delay_regs[i][i];
+            assign data_out[i*DATA_W +: DATA_W] = (i == 0) ? data_in_unpacked[i] : delay_regs[i][i];
         end
     endgenerate
 
@@ -97,8 +105,8 @@ module input_buffer #(
     input  wire [ADDR_W-1:0]    load_addr,
     input  wire [DATA_W-1:0]    load_data,
     
-    // Output to systolic array (skewed)
-    output wire [DATA_W-1:0]    buffer_out [N-1:0]
+    // Output to systolic array (skewed, flattened to 1D vector)
+    output wire [N*DATA_W-1:0]  buffer_out
 );
 
     //--------------------------------------------------------------------------
@@ -107,7 +115,6 @@ module input_buffer #(
     reg [DATA_W-1:0] buffer_mem [BUFFER_DEPTH-1:0];
     reg [DATA_W-1:0] load_reg [N-1:0];  // Load staging registers
     
-    integer i;
     integer idx;
     
     // Load data into buffer
@@ -123,16 +130,25 @@ module input_buffer #(
     // Read from buffer and stage for skewed output
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            for (i = 0; i < N; i = i + 1)
-                load_reg[i] <= 'b0;
+            for (idx = 0; idx < N; idx = idx + 1)
+                load_reg[idx] <= 'b0;
         end else if (enable) begin
             // Sequential read pattern for systolic operation
             // This is simplified - actual implementation would have more complex addressing
-            for (i = 0; i < N; i = i + 1)
-                load_reg[i] <= buffer_mem[i];
+            for (idx = 0; idx < N; idx = idx + 1)
+                load_reg[idx] <= buffer_mem[idx];
         end
     end
     
+    // Pack load_reg into a flat 1D vector
+    wire [N*DATA_W-1:0] load_reg_flat;
+    genvar reg_i;
+    generate
+        for (reg_i = 0; reg_i < N; reg_i = reg_i + 1) begin : pack_load_reg
+            assign load_reg_flat[reg_i*DATA_W +: DATA_W] = load_reg[reg_i];
+        end
+    endgenerate
+
     // Connect to skew unit
     buffer_skew #(
         .N(N),
@@ -141,7 +157,7 @@ module input_buffer #(
         .clk(clk),
         .rst_n(rst_n),
         .enable(enable),
-        .data_in(load_reg),
+        .data_in(load_reg_flat),
         .data_out(buffer_out)
     );
 
