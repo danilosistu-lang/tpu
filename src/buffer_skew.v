@@ -51,7 +51,7 @@ module buffer_skew #(
     //--------------------------------------------------------------------------
     generate
         for (i = 0; i < N; i = i + 1) begin : skew_rows
-            // Stage 0: either direct input or first delay stage
+            // Stage 0: first delay stage
             always @(posedge clk or negedge rst_n) begin
                 if (!rst_n) begin
                     delay_regs[i][0] <= 'b0;
@@ -61,9 +61,9 @@ module buffer_skew #(
             end
             
             // Additional delay stages for rows that need them
+            // Only generate stages j where j <= i (row i needs i+1 stages total, indexed 0 to i)
             for (j = 1; j < N; j = j + 1) begin : delay_stages
-                if (j <= i) begin : stage_needed
-                    // This row needs this delay stage
+                if (j <= i) begin : valid_stage
                     always @(posedge clk or negedge rst_n) begin
                         if (!rst_n) begin
                             delay_regs[i][j] <= 'b0;
@@ -71,11 +71,19 @@ module buffer_skew #(
                             delay_regs[i][j] <= delay_regs[i][j-1];
                         end
                     end
+                end else begin : unused_stage
+                    // For stages beyond what this row needs, tie to zero
+                    always @(posedge clk or negedge rst_n) begin
+                        if (!rst_n) begin
+                            delay_regs[i][j] <= 'b0;
+                        end
+                        // Otherwise hold value (never enabled)
+                    end
                 end
             end
             
             // Output is taken from the appropriate delay stage
-            // Row i outputs from stage i (or stage 0 if i=0)
+            // Row i outputs from stage i (or direct input if i=0)
             assign data_out[i*DATA_W +: DATA_W] = (i == 0) ? data_in_unpacked[i] : delay_regs[i][i];
         end
     endgenerate
