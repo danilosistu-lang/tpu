@@ -21,5 +21,9 @@
   "RUN_CTS": 1,
   "FP_PDN_MULTILAYER": 0,
   "MAGIC_DEF_LABELS": 0,
-  "MAGIC_WRITE_LEF_PINONLY": 1
+  "MAGIC_WRITE_LEF_PINONLY": 1,
+  "SYNTH_DRIVING_CELL_PIN": "Y",
+  "synth_driving_cell_pin": "Y",
+  "SYNTH_DRIVING_CELL": "sg13g2_buf_4",
+  "synth_driving_cell": "sg13g2_buf_4"
 }
